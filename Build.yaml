@@ -1,0 +1,11 @@
+jar: LiteSoftExternalization
+
+
+resources: 
+- $source$
+- src|**.xml
+- LICENSE
+
+dependencies:
+- ../LiteSoftCommonFoundation
+
