@@ -1,124 +1,212 @@
 package org.litesoft.externalization.shared;
 
 import org.litesoft.commonfoundation.base.*;
-import org.litesoft.commonfoundation.typeutils.*;
 
 import java.util.*;
 
-/**
- * Externalization Data to be used with an Externally Sourced String keyed
- * template system that supports substitutions within any specific template by
- * "named" values.
- */
-public class E13nData {
+public class E13nData implements ExternalizableByCode {
+    private abstract static class AbstractBuilder {
+        protected final String externalizableCode;
+        private Map<String, String> substitutionNamedValues;
 
-    /**
-     * Substitution Value w/ a flag indicating if it is User Data, or another
-     * Template Id Code to be used as a Sub-Template.
-     */
-    public static class SubstitutionValue {
-        private final boolean mUserData;
-        private final String mValue;
-
-        public SubstitutionValue( boolean userData, String value ) {
-            this.mUserData = userData;
-            this.mValue = value;
+        private AbstractBuilder( String externalizableCode, Map<String, String> substitutionNamedValues ) {
+            this.externalizableCode = externalizableCode;
+            this.substitutionNamedValues = substitutionNamedValues;
         }
 
         /**
-         * Flag indicating if the "value" is User Data, or another Template Id
-         * Code to be used as a Sub-Template.
+         * Add a Substitution Named Value (as plain text, should probably not contain substitution key identifiers).
+         *
+         * @param name     Not allowed to be empty
+         * @param userData null converted to ""
          */
-        public boolean isUserData() {
-            return mUserData;
+        public BuilderFinal addSubstitutionNamedUserData( String name, String userData ) {
+            add( name, userData );
+            return chainToBuilderFinal();
         }
 
         /**
-         * User Data, or another Template Id Code to be used as a Sub-Template.
+         * Add a Substitution Named Value (with the assumption that it will get wrapped by substitution key identifiers).
+         *
+         * @param name               Not allowed to be empty
+         * @param externalizableCode Not allowed to be empty
          */
-        public String getValue() {
-            return mValue;
+        public BuilderFinal addSubstitutionNamedExternalizableCode( String name, String externalizableCode ) {
+            add( name, toNestedReference( externalizableCode ) );
+            return chainToBuilderFinal();
+        }
+
+        /**
+         * Add a Substitution Named Value (that is resolved immediately).
+         *
+         * @param name           Not allowed to be empty
+         * @param externalizable null converted to ""
+         */
+        public BuilderFinal addSubstitutionNamedValue( String name, E13nResolver resolver, Externalizable externalizable ) {
+            add( name, toString( resolver, externalizable ) );
+            return chainToBuilderFinal();
+        }
+
+        protected String toNestedReference( String externalizableCode ) {
+            return E13nResolver.INIT + Confirm.significant( "externalizableCode", externalizableCode ) + E13nResolver.FINI;
+        }
+
+        protected String toString( E13nResolver resolver, Externalizable externalizable ) {
+            return (externalizable == null) ? "" : resolver.resolve( externalizable );
+        }
+
+        protected void addIndexed( String parameter ) {
+            add( Integer.toString( substitutionNamedValues.size() ), parameter );
+        }
+
+        protected void addArrayIndexed( String... parameters ) {
+            if ( parameters != null ) {
+                for ( String parameter : parameters ) {
+                    add( Integer.toString( substitutionNamedValues.size() ), parameter );
+                }
+            }
+        }
+
+        protected void add( String name, String parameter ) {
+            if ( null != substitutionNamedValues.put( name = Confirm.significant( "name", name ), ConstrainTo.notNull( parameter ) ) ) {
+                throw new IllegalStateException( "Duplicate Substitution added for '" + name + "'" );
+            }
+        }
+
+        protected abstract BuilderFinal chainToBuilderFinal();
+
+        protected Map<String, String> snagSubstitutionNamedValues() {
+            Map<String, String> snagged = substitutionNamedValues;
+            substitutionNamedValues = null;
+            return snagged;
+        }
+    }
+
+    public abstract static class AbstractIndexBuilder extends AbstractBuilder {
+        private AbstractIndexBuilder( String externalizableCode, Map<String, String> substitutionNamedValues ) {
+            super( externalizableCode, substitutionNamedValues );
+        }
+
+        /**
+         * Add 'next' Indexed Substitution Value (as plain text, should probably not contain substitution key identifiers).
+         *
+         * @param userData null converted to ""
+         */
+        public BuilderIndexed addIndexedUserData( String... userData ) {
+            addArrayIndexed( userData );
+            return chainToBuilderIndexed();
+        }
+
+        /**
+         * Add 'next' Indexed Substitution Value (as plain text, should probably not contain substitution key identifiers).
+         *
+         * @param userData null converted to ""
+         */
+        public BuilderIndexed addNextIndexedUserData( String userData ) {
+            addIndexed( userData );
+            return chainToBuilderIndexed();
+        }
+
+        /**
+         * Add 'next' Indexed Substitution Value (with the assumption that it will get wrapped by substitution key identifiers).
+         *
+         * @param externalizableCode Not allowed to be empty
+         */
+        public BuilderIndexed addNextIndexedExternalizableCode( String externalizableCode ) {
+            addIndexed( toNestedReference( externalizableCode ) );
+            return chainToBuilderIndexed();
+        }
+
+        /**
+         * Add 'next' Indexed Substitution Value (that is resolved immediately).
+         *
+         * @param externalizable null converted to ""
+         */
+        public BuilderIndexed addNextIndexedValue( E13nResolver resolver, Externalizable externalizable ) {
+            addIndexed( toString( resolver, externalizable ) );
+            return chainToBuilderIndexed();
         }
 
         @Override
-        public String toString() {
-            return mUserData ? mValue : "{" + mValue + "}";
+        protected BuilderFinal chainToBuilderFinal() {
+            return new BuilderFinal( externalizableCode, snagSubstitutionNamedValues() );
+        }
+
+        protected abstract BuilderIndexed chainToBuilderIndexed();
+    }
+
+    public static class Builder extends AbstractIndexBuilder {
+        private Builder( String externalizableCode ) {
+            super( Confirm.significant( "externalizableCode", externalizableCode ), new HashMap<String, String>() );
+        }
+
+        @Override
+        protected BuilderIndexed chainToBuilderIndexed() {
+            return new BuilderIndexed( externalizableCode, snagSubstitutionNamedValues() );
+        }
+
+        public E13nData build() {
+            return new E13nData( externalizableCode, snagSubstitutionNamedValues() );
         }
     }
 
-    private final String mTemplateIdCode;
-    private Map<String, SubstitutionValue> mSubstitutionNamedValues;
-
-    /**
-     * Convert the templateIdCode (parameter) into an acceptable string form for
-     * the templateIdCode.
-     *
-     * @param pTemplateIdCode Template Identifying Code
-     */
-    private E13nData( Object pTemplateIdCode ) {
-        this.mTemplateIdCode = Confirm.significantOfToStringOf( "templateIdCode", pTemplateIdCode );
-    }
-
-    public static E13nData builder( String externalizableCode ) {
-        return new E13nData( externalizableCode );
-    }
-
-    public static E13nData builder( Enum<?> pEnum ) {
-        return new E13nData( pEnum );
-    }
-
-    public E13nData build() {
-        return this;
-    }
-
-    /**
-     * @return Not null map of Template Substitution Named Values
-     */
-    public synchronized Map<String, SubstitutionValue> getSubstitutionNamedValues() {
-        if ( mSubstitutionNamedValues == null ) {
-            return Collections.emptyMap();
+    public static class BuilderIndexed extends AbstractIndexBuilder {
+        private BuilderIndexed( String externalizableCode, Map<String, String> substitutionNamedValues ) {
+            super( externalizableCode, substitutionNamedValues );
         }
-        return Maps.newHashMap( mSubstitutionNamedValues ); // defensive copy for Thread Safety
-    }
 
-    private synchronized E13nData addPair( boolean pUserData, String pName, String pValue ) {
-        pName = Confirm.significant( "name", pName );
-        if ( mSubstitutionNamedValues == null ) {
-            mSubstitutionNamedValues = Maps.newHashMap();
+        @Override
+        protected BuilderIndexed chainToBuilderIndexed() {
+            return this;
         }
-        mSubstitutionNamedValues.put( pName, new SubstitutionValue( pUserData, pValue ) );
-        return this;
+
+        public E13nData build() {
+            return new E13nData( externalizableCode, snagSubstitutionNamedValues() );
+        }
     }
 
-    /**
-     * Add a User Substitution Named Value.
-     *
-     * @param pName     Not allowed to be empty
-     * @param pUserData null converted to ""
-     */
-    public E13nData addSubstitutionNamedUserData( String pName, String pUserData ) {
-        return addPair( true, pName, ConstrainTo.notNull( pUserData ) );
+    public static class BuilderFinal extends AbstractBuilder {
+        private BuilderFinal( String externalizableCode, Map<String, String> substitutionNamedValues ) {
+            super( externalizableCode, substitutionNamedValues );
+        }
+
+        @Override
+        protected BuilderFinal chainToBuilderFinal() {
+            return this;
+        }
+
+        public E13nData build() {
+            return new E13nData( externalizableCode, snagSubstitutionNamedValues() );
+        }
     }
 
-    /**
-     * Add a User Substitution Named Value.
-     *
-     * @param pName              Not allowed to be empty
-     * @param pSubTemplateIdCode Not allowed to be empty
-     */
-    public E13nData addSubstitutionNamedExternalizableCode( String pName, String pSubTemplateIdCode ) {
-        return addPair( false, pName, Confirm.significant( "subTemplateIdCode", pSubTemplateIdCode ) );
+    public static Builder builder( String externalizableCode ) {
+        return new Builder( externalizableCode );
     }
 
-    /**
-     * @return Not Empty TemplateIdCode
-     */
-    public String getTemplateIdCode() {
-        return mTemplateIdCode;
+    public static Builder builder( Enum<?> enumNameAsExternalizableCode ) {
+        return builder( Confirm.isNotNull( "enumNameAsExternalizableCode", enumNameAsExternalizableCode ).name() );
+    }
+
+    public static Builder builder( ExternalizableCodeSupplier externalizableCodeSupplier ) {
+        return new Builder( E13nResolver.Code.get( Confirm.isNotNull( "externalizableCodeSupplier",
+                                                                      externalizableCodeSupplier ) ) );
+    }
+
+    private final String externalizableCode;
+    private final MapBasedSubstitutionData substitutionNamedValues;
+
+    private E13nData( String externalizableCode, Map<String, String> substitutionNamedValues ) {
+        this.externalizableCode = externalizableCode;
+        this.substitutionNamedValues = new MapBasedSubstitutionData( substitutionNamedValues );
     }
 
     @Override
-    public String toString() {
-        return getTemplateIdCode() + getSubstitutionNamedValues();
+    public String getExternalizableCode() {
+        return externalizableCode;
+    }
+
+    public E13nSubstitutionData getSubstitutionData() {
+        return substitutionNamedValues;
     }
 }

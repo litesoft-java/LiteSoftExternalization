@@ -1,16 +1,7 @@
 package org.litesoft.externalization.shared;
 
-/**
- * Externalization Resolver that takes an E13nData (or Enum key or String key)
- * and resolves it to a String with an Externally Sourced String keyed template
- * system that supports substitutions within any specific template by "named"
- * values.
- * <p/>
- * Since Substitution Keys may NOT have spaces, spaces can be used to force
- * what would appear to be a substitution key (something between the INIT & FINI
- * characters) to be ignored. Unbalanced INIT & FINI characters or an
- * empty substitution key are also ignored.
- */
+import org.litesoft.commonfoundation.base.*;
+
 public interface E13nResolver {
     public static final char PREFIX_SEP = '_';
     public static final char INIT = '{'; // For Substitution Key
@@ -19,36 +10,137 @@ public interface E13nResolver {
     public static final String SPACE_SUBSTITUTION_ID = "{Space}"; // used to force either leading or trailing spaces from being "trim()" away
 
     /**
-     * Resolves the 'data' to a String by implementing an Externally Sourced
-     * String keyed template system that supports substitutions within any
-     * specific template by "named" values.
+     * @param key !empty
      *
-     * @param pData !null
-     *
-     * @return Resolved String form of the !null 'data';
+     * @return Fully Qualified Key
      */
-    public String resolve( E13nData pData );
+    String getFullyQualifiedKey( String key );
 
     /**
-     * Resolves the 'key' (by optionally prefixing its name with the enum's
-     * simple class name) to a String by implementing an Externally Sourced
-     * String keyed template system that supports substitutions within any
-     * specific template by "named" values.
-     *
-     * @param pKey !null
-     *
-     * @return Resolved String form of the !null 'key';
+     * Get the backing substitution data (a form of limited API String-String Map).
+     * <p/>
+     * This method is primarily used to generate a chain of responsibility pattern for overriding the substitution data.
      */
-    public String resolve( Enum<?> pKey );
+    E13nSubstitutionData getSubstitutionData();
 
     /**
-     * Resolves the 'pKey' to a String by implementing an Externally Sourced
+     * Get the underlying ContextualKeyProvider(s) that are used to create the search keys.
+     * <p/>
+     * The first entry is used to produce the FullyQualifiedKey.
+     * <p/>
+     * This method is primarily used to generate a chain of responsibility behavior for adding optional Context to the search keys.
+     */
+    ContextualKeyProvider[] getContextualKeyProviders();
+
+    /**
+     * Resolves the 'key' to a String by implementing an Externally Sourced
      * String keyed template system that supports substitutions within any
      * specific template by "named" values.
      *
-     * @param pKey !null & !empty (after trimming)
+     * @param key !null & !empty (after trimming)
      *
-     * @return Resolved String form of the !empty 'Key';
+     * @return Resolved String form of the 'key' or a null if not found!
      */
-    public String resolve( String pKey );
+    public String resolveOptionally( String key );
+
+    /**
+     * Resolves the 'key' to a String by implementing an Externally Sourced
+     * String keyed template system that supports substitutions within any
+     * specific template by "named" values.
+     *
+     * @param key !null & !empty (after trimming)
+     *
+     * @return Resolved String form of the 'key' or the 'defaultValue' if not
+     * found!
+     */
+    public String resolveOrDefault( String key, String defaultValue );
+
+    /**
+     * Resolves the 'key' to a String by implementing an Externally Sourced
+     * String keyed template system that supports substitutions within any
+     * specific template by "named" values.
+     *
+     * @param key !null & !empty (after trimming)
+     *
+     * @return Resolved String form of the 'key' or the 'key' in square
+     * brackets ("[]") if not found!
+     */
+    public String resolve( String key );
+
+    /**
+     * Resolves the 'externalizable' to a String by implementing an Externally Sourced
+     * String keyed template system that supports substitutions within any
+     * specific template by "named" values.
+     * <p/>
+     * The order of evaluation is:
+     * <li>CustomizedExternalizable interface: getExternalizedText(E13nResolver pE13nResolver)</li>
+     * <li>ExternalizableByCode interface: resolve({externalizable}.getExternalizableCode())</li>
+     * <li>resolve(externalizable.toString())</li>
+     *
+     * @param externalizable !null (& if a String key is generated is !empty - after trimming)
+     *
+     * @return Resolved String form of the 'externalizable' or ... (if the externalizable is
+     * actually a CustomizedExternalizable).
+     */
+    public String resolve( Externalizable externalizable );
+
+    public static class Code {
+        public static String get( Externalizable externalizable ) {
+            if ( externalizable != null ) {
+                if ( externalizable instanceof ExternalizableByCode ) {
+                    return ((ExternalizableByCode) externalizable).getExternalizableCode();
+                }
+                if ( externalizable instanceof ExternalizableByCodeWithData ) {
+                    return ((ExternalizableByCodeWithData) externalizable).getE13nData().getExternalizableCode();
+                }
+                if ( (externalizable instanceof ExternalizableCodeSupplier) || !(externalizable instanceof CustomizedExternalizable) ) {
+                    return externalizable.toString();
+                }
+            }
+            return "";
+        }
+
+        public static String extendedCode( ExternalizableEnum externalizable, String code ) {
+            return ClassName.simple( externalizable ) + PREFIX_SEP + ConstrainTo.significantOrNull( code, externalizable.name() );
+        }
+
+        /**
+         * This method treats the 'externalizable' similar to E13nResolver.resolve(Externalizable) to find a 'code'
+         * (an implementation of CustomizedExternalizable w/o ExternalizableCodeSupplier is ignored!) that is then
+         * suffixed w/ 'suffix'.
+         *
+         * @param suffix !null
+         *
+         * @return null or the combination of the 'externalizable code' + 'suffix'.
+         */
+        public static String suffixedCode( Externalizable externalizable, String suffix ) {
+            String zCode = ConstrainTo.significantOrNull( get( externalizable ) );
+            return (zCode == null) ? null : zCode + suffix;
+        }
+
+        /**
+         * This method treats the 'externalizable' similar to E13nResolver.resolve(Externalizable) to find a 'code'
+         * (an implementation of CustomizedExternalizable w/o ExternalizableCodeSupplier is ignored!) that is then
+         * suffixed w/ 'suffix'.
+         *
+         * @param pE13nResolver !null
+         * @param suffix        !null assumed
+         *
+         * @return "" or the resolved combination of the 'externalizable code' + 'suffix'.
+         */
+        public static String resolveWithSuffix( E13nResolver pE13nResolver, Externalizable externalizable, String suffix ) {
+            return resolveWithSuffix( pE13nResolver, get( externalizable ), suffix );
+        }
+
+        /**
+         * @param pE13nResolver !null
+         * @param suffix        !null assumed
+         *
+         * @return "" or the resolved combination of the 'code' + 'suffix'.
+         */
+        public static String resolveWithSuffix( E13nResolver pE13nResolver, String code, String suffix ) {
+            return (null == (code = ConstrainTo.significantOrNull( code ))) ?
+                   "" : pE13nResolver.resolveOrDefault( code + suffix, "" );
+        }
+    }
 }
