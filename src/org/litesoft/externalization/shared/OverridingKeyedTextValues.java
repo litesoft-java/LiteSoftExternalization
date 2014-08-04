@@ -2,11 +2,11 @@ package org.litesoft.externalization.shared;
 
 import org.litesoft.commonfoundation.base.*;
 
-public class OverridingSubstitutionData implements E13nSubstitutionData {
-    private final E13nSubstitutionData overrides;
-    private final E13nSubstitutionData proxied;
+public class OverridingKeyedTextValues implements KeyedTextValues {
+    private final KeyedTextValues overrides;
+    private final KeyedTextValues proxied;
 
-    /* package friendly */ OverridingSubstitutionData( E13nSubstitutionData overrides, E13nSubstitutionData proxied ) {
+    /* package friendly */ OverridingKeyedTextValues( KeyedTextValues overrides, KeyedTextValues proxied ) {
         this.overrides = Confirm.isNotNull( "overrides", overrides );
         this.proxied = Confirm.isNotNull( "proxied", proxied );
     }

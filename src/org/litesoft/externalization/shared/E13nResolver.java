@@ -21,7 +21,7 @@ public interface E13nResolver {
      * <p/>
      * This method is primarily used to generate a chain of responsibility pattern for overriding the substitution data.
      */
-    E13nSubstitutionData getSubstitutionData();
+    KeyedTextValues getSubstitutionData();
 
     /**
      * Get the underlying ContextualKeyProvider(s) that are used to create the search keys.
@@ -33,6 +33,18 @@ public interface E13nResolver {
     ContextualKeyProvider[] getContextualKeyProviders();
 
     /**
+     * Get a Contextual E13nResolver by adding "requiredContext".
+     * <p/>
+     * @param requiredContext must be significant.
+     */
+    E13nResolver withContext(String requiredContext);
+
+    /**
+     * Get a Contextual E13nResolver by adding "context" if it is significant.
+     */
+    E13nResolver withOptionalContext(String context);
+
+    /**
      * Resolves the 'key' to a String by implementing an Externally Sourced
      * String keyed template system that supports substitutions within any
      * specific template by "named" values.
@@ -41,7 +53,7 @@ public interface E13nResolver {
      *
      * @return Resolved String form of the 'key' or a null if not found!
      */
-    public String resolveOptionally( String key );
+    String resolveOptionally( String key );
 
     /**
      * Resolves the 'key' to a String by implementing an Externally Sourced
@@ -53,7 +65,7 @@ public interface E13nResolver {
      * @return Resolved String form of the 'key' or the 'defaultValue' if not
      * found!
      */
-    public String resolveOrDefault( String key, String defaultValue );
+    String resolveOrDefault( String key, String defaultValue );
 
     /**
      * Resolves the 'key' to a String by implementing an Externally Sourced
@@ -65,7 +77,7 @@ public interface E13nResolver {
      * @return Resolved String form of the 'key' or the 'key' in square
      * brackets ("[]") if not found!
      */
-    public String resolve( String key );
+    String resolve( String key );
 
     /**
      * Resolves the 'externalizable' to a String by implementing an Externally Sourced
@@ -82,7 +94,7 @@ public interface E13nResolver {
      * @return Resolved String form of the 'externalizable' or ... (if the externalizable is
      * actually a CustomizedExternalizable).
      */
-    public String resolve( Externalizable externalizable );
+    String resolve( Externalizable externalizable );
 
     public static class Code {
         public static String get( Externalizable externalizable ) {

@@ -16,13 +16,9 @@ public class ContextualE13nResolver extends AbstractE13nResolver {
                createKeyProviders( proxied, requiredContext, additionalContexts ) );
     }
 
-    public ContextualE13nResolver( E13nResolver proxied, E13nSubstitutionData overrides, String requiredContext, String... additionalContexts ) {
-        super( new OverridingSubstitutionData( overrides, proxied.getSubstitutionData() ),
+    public ContextualE13nResolver( E13nResolver proxied, KeyedTextValues overrides, String requiredContext, String... additionalContexts ) {
+        super( new OverridingKeyedTextValues( overrides, proxied.getSubstitutionData() ),
                createKeyProviders( proxied, requiredContext, additionalContexts ) );
-    }
-
-    public static E13nResolver optionalContext( E13nResolver proxied, String context ) {
-        return (null == (context = ConstrainTo.significantOrNull( context ))) ? proxied : new ContextualE13nResolver( proxied, context );
     }
 
     private static ContextualKeyProvider[] createKeyProviders( E13nResolver proxied, String requiredContext, String... additionalContexts ) {

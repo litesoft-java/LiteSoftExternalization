@@ -4,5 +4,6 @@
     <inherits name='org.litesoft.CommonFoundation'/>
 
     <source path="shared"/>
+    <source path="client"/>
 
 </module>

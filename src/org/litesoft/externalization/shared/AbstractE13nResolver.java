@@ -5,15 +5,15 @@ import org.litesoft.commonfoundation.base.*;
 public abstract class AbstractE13nResolver implements E13nResolver {
     private static final int MAX_DEPTH_FLAG_AS_CYCLE = 5;
 
-    private final E13nSubstitutionData substitutionData;
+    private final KeyedTextValues substitutionData;
     private final ContextualKeyProvider[] keyProviders;
 
-    protected AbstractE13nResolver( E13nSubstitutionData substitutionData, ContextualKeyProvider[] keyProviders ) {
+    protected AbstractE13nResolver( KeyedTextValues substitutionData, ContextualKeyProvider[] keyProviders ) {
         this.substitutionData = Confirm.isNotNull( "substitutionData", substitutionData );
         this.keyProviders = Confirm.isNotNull( "keyProviders", keyProviders );
     }
 
-    protected AbstractE13nResolver( E13nSubstitutionData pSubstitutionData ) {
+    protected AbstractE13nResolver( KeyedTextValues pSubstitutionData ) {
         this( pSubstitutionData, ContextualKeyProvider.INSTANCES );
     }
 
@@ -28,12 +28,22 @@ public abstract class AbstractE13nResolver implements E13nResolver {
     }
 
     @Override
+    public E13nResolver withContext( String requiredContext ) {
+        return new ContextualE13nResolver( this, requiredContext );
+    }
+
+    @Override
+    public E13nResolver withOptionalContext( String context ) {
+        return (null == ConstrainTo.significantOrNull( context )) ? this : withContext( context );
+    }
+
+    @Override
     public final String getFullyQualifiedKey( String key ) {
         return keyProviders[0].getSearchKey( key );
     }
 
     @Override
-    public final E13nSubstitutionData getSubstitutionData() {
+    public final KeyedTextValues getSubstitutionData() {
         return substitutionData;
     }
 

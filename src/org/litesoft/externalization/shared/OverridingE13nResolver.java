@@ -1,5 +1,7 @@
 package org.litesoft.externalization.shared;
 
+import org.litesoft.commonfoundation.base.*;
+
 /**
  * Implementation of a E13nResolver that checks the overriding E13nSubstitutionData before checking with the proxied.
  *
@@ -7,7 +9,7 @@ package org.litesoft.externalization.shared;
  */
 public class OverridingE13nResolver extends AbstractE13nResolver {
 
-    public OverridingE13nResolver( E13nSubstitutionData overrides, E13nResolver proxied ) {
-        super( new OverridingSubstitutionData( overrides, proxied.getSubstitutionData() ), proxied.getContextualKeyProviders() );
+    public OverridingE13nResolver( KeyedTextValues overrides, E13nResolver proxied ) {
+        super( new OverridingKeyedTextValues( overrides, proxied.getSubstitutionData() ), proxied.getContextualKeyProviders() );
     }
 }

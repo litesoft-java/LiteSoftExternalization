@@ -1,10 +1,41 @@
 package org.litesoft.externalization.shared;
 
 import org.litesoft.commonfoundation.base.*;
+import org.litesoft.commonfoundation.problems.*;
 
 import java.util.*;
 
 public class E13nData implements ExternalizableByCode {
+    public static E13nData from( Problem pProblem ) {
+        Throwable zThrowable = pProblem.getThrowable();
+        if ( zThrowable != null ) {
+            zThrowable.printStackTrace();
+        }
+        Builder zBuilder = builder( pProblem.getProblemCode() );
+        String[] zProblemSupportValues = pProblem.getProblemSupportValues();
+        if ( Currently.isNotNullOrEmpty( zProblemSupportValues ) ) {
+            return zBuilder.addIndexedUserData( zProblemSupportValues ).build();
+        }
+        List<NameValuePair> zNamedSupportValues = pProblem.getNamedSupportValues();
+        if ( Currently.isNullOrEmpty( zNamedSupportValues ) ) {
+            zBuilder.addSubstitutionNamedUserDatas( zNamedSupportValues ).build();
+        }
+        return zBuilder.build();
+    }
+
+    public static Builder builder( String externalizableCode ) {
+        return new Builder( externalizableCode );
+    }
+
+    public static Builder builder( Enum<?> enumNameAsExternalizableCode ) {
+        return builder( Confirm.isNotNull( "enumNameAsExternalizableCode", enumNameAsExternalizableCode ).name() );
+    }
+
+    public static Builder builder( ExternalizableCodeSupplier externalizableCodeSupplier ) {
+        return new Builder( E13nResolver.Code.get( Confirm.isNotNull( "externalizableCodeSupplier",
+                                                                      externalizableCodeSupplier ) ) );
+    }
+
     private abstract static class AbstractBuilder {
         protected final String externalizableCode;
         private Map<String, String> substitutionNamedValues;
@@ -12,6 +43,23 @@ public class E13nData implements ExternalizableByCode {
         private AbstractBuilder( String externalizableCode, Map<String, String> substitutionNamedValues ) {
             this.externalizableCode = externalizableCode;
             this.substitutionNamedValues = substitutionNamedValues;
+        }
+
+        /**
+         * Add a list of Substitution Named Values (as plain text, should probably not contain substitution key identifiers).
+         *
+         * @param name     Not allowed to be empty
+         * @param userData null converted to ""
+         */
+        public BuilderFinal addSubstitutionNamedUserDatas( List<NameValuePair> pNamedValues ) {
+            if ( pNamedValues != null ) {
+                for ( NameValuePair zNamedValue : pNamedValues ) {
+                    if ( zNamedValue != null ) {
+                        add( zNamedValue.getName(), zNamedValue.getValue() );
+                    }
+                }
+            }
+            return chainToBuilderFinal();
         }
 
         /**
@@ -180,25 +228,12 @@ public class E13nData implements ExternalizableByCode {
         }
     }
 
-    public static Builder builder( String externalizableCode ) {
-        return new Builder( externalizableCode );
-    }
-
-    public static Builder builder( Enum<?> enumNameAsExternalizableCode ) {
-        return builder( Confirm.isNotNull( "enumNameAsExternalizableCode", enumNameAsExternalizableCode ).name() );
-    }
-
-    public static Builder builder( ExternalizableCodeSupplier externalizableCodeSupplier ) {
-        return new Builder( E13nResolver.Code.get( Confirm.isNotNull( "externalizableCodeSupplier",
-                                                                      externalizableCodeSupplier ) ) );
-    }
-
     private final String externalizableCode;
-    private final MapBasedSubstitutionData substitutionNamedValues;
+    private final SimpleKeyedTextValues substitutionNamedValues;
 
     private E13nData( String externalizableCode, Map<String, String> substitutionNamedValues ) {
         this.externalizableCode = externalizableCode;
-        this.substitutionNamedValues = new MapBasedSubstitutionData( substitutionNamedValues );
+        this.substitutionNamedValues = new SimpleKeyedTextValues( substitutionNamedValues );
     }
 
     @Override
@@ -206,7 +241,7 @@ public class E13nData implements ExternalizableByCode {
         return externalizableCode;
     }
 
-    public E13nSubstitutionData getSubstitutionData() {
+    public KeyedTextValues getSubstitutionData() {
         return substitutionNamedValues;
     }
 }

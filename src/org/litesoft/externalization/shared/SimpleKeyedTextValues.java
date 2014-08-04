@@ -4,18 +4,18 @@ import org.litesoft.commonfoundation.base.*;
 
 import java.util.*;
 
-public class MapBasedSubstitutionData implements E13nSubstitutionData {
+public class SimpleKeyedTextValues implements KeyedTextValues {
     private final Map<String, String> mMap;
 
-    /* package friendly */ MapBasedSubstitutionData( Map<String, String> pMap ) {
+    /* package friendly */ SimpleKeyedTextValues( Map<String, String> pMap ) {
         mMap = pMap;
     }
 
-    public static MapBasedSubstitutionData with( String pKey, String pValue ) {
-        return new MapBasedSubstitutionData( new HashMap<String, String>() ).and( pKey, pValue );
+    public static SimpleKeyedTextValues with( String pKey, String pValue ) {
+        return new SimpleKeyedTextValues( new HashMap<String, String>() ).and( pKey, pValue );
     }
 
-    public MapBasedSubstitutionData and( String pKey, String pValue ) {
+    public SimpleKeyedTextValues and( String pKey, String pValue ) {
         mMap.put( Confirm.isNotNull( "Key", pKey ), Confirm.isNotNull( "Value", pValue ) );
         return this;
     }
