@@ -3,7 +3,7 @@ package org.litesoft.externalization.shared;
 import org.litesoft.commonfoundation.base.*;
 
 public interface E13nResolver {
-    public static final char PREFIX_SEP = '_';
+    public static final char CONTEXT_KEY_SEP = '_';  // Need to maintain == LocaleFileConstants.COMPOUND_KEY_SEP
     public static final char INIT = '{'; // For Substitution Key
     public static final char FINI = '}'; // For Substitution Key
     public static final String DONT_SHOW_SUBSTITUTION_ID = "{DontShow}"; // Replaced by a "" (empty String)
@@ -113,7 +113,7 @@ public interface E13nResolver {
         }
 
         public static String extendedCode( ExternalizableEnum externalizable, String code ) {
-            return ClassName.simple( externalizable ) + PREFIX_SEP + ConstrainTo.significantOrNull( code, externalizable.name() );
+            return ClassName.simple( externalizable ) + CONTEXT_KEY_SEP + ConstrainTo.significantOrNull( code, externalizable.name() );
         }
 
         /**
