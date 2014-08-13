@@ -3,7 +3,6 @@ package org.litesoft.externalization.shared;
 import org.litesoft.commonfoundation.base.*;
 
 public class ContextualKeyProvider {
-    public static final char CONTEXT_SEP = '_';
     public static final ContextualKeyProvider[] INSTANCES = {new ContextualKeyProvider()};
 
     private ContextualKeyProvider() {
@@ -34,12 +33,12 @@ public class ContextualKeyProvider {
 
         @Override
         public String getSearchKey( String key ) {
-            return prefix + CONTEXT_SEP + super.getSearchKey( key );
+            return prefix + E13nResolver.CONTEXT_KEY_SEP + super.getSearchKey( key );
         }
 
         @Override
         public ContextualKeyProvider addContext( String context ) {
-            return (null == ConstrainTo.significantOrNull( context )) ? this : new Prefixing( prefix + CONTEXT_SEP + context );
+            return (null == ConstrainTo.significantOrNull( context )) ? this : new Prefixing( prefix + E13nResolver.CONTEXT_KEY_SEP + context );
         }
     }
 }

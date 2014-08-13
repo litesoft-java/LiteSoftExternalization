@@ -3,7 +3,7 @@ package org.litesoft.externalization.shared;
 import org.litesoft.commonfoundation.base.*;
 
 public interface E13nResolver {
-    public static final char CONTEXT_KEY_SEP = '_';  // Need to maintain == LocaleFileConstants.COMPOUND_KEY_SEP
+    public static final char CONTEXT_KEY_SEP = '.';  // Need to maintain == LocaleFileConstants.COMPOUND_KEY_SEP
     public static final char INIT = '{'; // For Substitution Key
     public static final char FINI = '}'; // For Substitution Key
     public static final String DONT_SHOW_SUBSTITUTION_ID = "{DontShow}"; // Replaced by a "" (empty String)
@@ -151,7 +151,7 @@ public interface E13nResolver {
          * @return "" or the resolved combination of the 'code' + 'suffix'.
          */
         public static String resolveWithSuffix( E13nResolver pE13nResolver, String code, String suffix ) {
-            return (null == (code = ConstrainTo.significantOrNull( code ))) ?
+            return ((null == (code = ConstrainTo.significantOrNull( code ))) || (pE13nResolver == null)) ?
                    "" : pE13nResolver.resolveOrDefault( code + suffix, "" );
         }
     }

@@ -47,9 +47,6 @@ public class E13nData implements ExternalizableByCode {
 
         /**
          * Add a list of Substitution Named Values (as plain text, should probably not contain substitution key identifiers).
-         *
-         * @param name     Not allowed to be empty
-         * @param userData null converted to ""
          */
         public BuilderFinal addSubstitutionNamedUserDatas( List<NameValuePair> pNamedValues ) {
             if ( pNamedValues != null ) {
