@@ -6,8 +6,8 @@ resources:
 - src|**.xml
 - LICENSE
 
-dependencies:
+compiledependencies:
 - ../LiteSoftCommonFoundation
 
 compileclasspath:
-- libs|**.jar
+- libs/client|**.jar
