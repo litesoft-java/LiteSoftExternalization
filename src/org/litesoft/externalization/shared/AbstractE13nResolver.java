@@ -154,7 +154,9 @@ public abstract class AbstractE13nResolver implements E13nResolver {
 //    }
 
     private String keyNotFound( String key ) {
-        return "[" + getFullyQualifiedKey( key ) + "]";
+        String zNotFound = "[" + getFullyQualifiedKey( key ) + "]";
+        System.out.println( "Unable to Externalize: " + zNotFound );
+        return zNotFound;
     }
 
     /**
